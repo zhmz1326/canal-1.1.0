@@ -625,9 +625,11 @@ public class LogEventConvert extends AbstractCanalLifeCycle implements BinlogPar
                 // 在做一次判断
                 if (tableMeta != null && columnInfo.length > tableMeta.getFields().size()) {
                     tableError = true;
-                    if (!filterTableError) {
-                        throw new CanalParseException("column size is not match for table:" + tableMeta.getFullName()
-                                                      + "," + columnInfo.length + " vs " + tableMeta.getFields().size());
+                    if (!filterTableError) { // TODO zheng 暂时不抛出异常，继续处理
+                        logger.warn("column size is not match for table:" + tableMeta.getFullName()
+                                + "," + columnInfo.length + " vs " + tableMeta.getFields().size());
+                        // throw new CanalParseException("column size is not match for table:" + tableMeta.getFullName()
+                        //                               + "," + columnInfo.length + " vs " + tableMeta.getFields().size());
                     }
                 }
             } else {
@@ -645,7 +647,7 @@ public class LogEventConvert extends AbstractCanalLifeCycle implements BinlogPar
 
             if (existRDSNoPrimaryKey && i == columnCnt - 1 && info.type == LogEvent.MYSQL_TYPE_LONGLONG) {
                 // 不解析最后一列
-                buffer.nextValue(info.type, info.meta, false);
+                buffer.nextValue(info.type, info.meta, false, tableMeta.getTable(), null);
                 continue;
             }
 
@@ -677,7 +679,12 @@ public class LogEventConvert extends AbstractCanalLifeCycle implements BinlogPar
                 }
             }
 
-            buffer.nextValue(info.type, info.meta, isBinary);
+            try {
+                buffer.nextValue(info.type, info.meta, isBinary, tableMeta.getTable(), fieldMeta.getColumnName());
+            } catch (Exception e) {
+                logger.warn("Fail to parse data, table: " + tableMeta.getTable() + ", column: " + fieldMeta.getColumnName(), e);
+                continue;
+            }
             if (existRDSNoPrimaryKey && i == columnCnt - 1 && info.type == LogEvent.MYSQL_TYPE_LONGLONG) {
                 // 不解析最后一列
                 continue;
