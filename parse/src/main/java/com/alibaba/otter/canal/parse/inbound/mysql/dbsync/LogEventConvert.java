@@ -682,7 +682,11 @@ public class LogEventConvert extends AbstractCanalLifeCycle implements BinlogPar
             try {
                 buffer.nextValue(info.type, info.meta, isBinary, tableMeta.getTable(), fieldMeta.getColumnName());
             } catch (Exception e) {
-                logger.warn("Fail to parse data, table: " + tableMeta.getTable() + ", column: " + fieldMeta.getColumnName(), e);
+                if (tableMeta != null && fieldMeta != null) {
+                    logger.warn("Fail to parse data, table: " + tableMeta.getTable() + ", column: " + fieldMeta.getColumnName(), e);
+                } else {
+                    logger.warn("Fail to parse data", e);
+                }
                 continue;
             }
             if (existRDSNoPrimaryKey && i == columnCnt - 1 && info.type == LogEvent.MYSQL_TYPE_LONGLONG) {
